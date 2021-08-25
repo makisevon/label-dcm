@@ -3,7 +3,7 @@ from module import utils
 from module.config import config
 from module.mode import LabelMode
 from ui.form import Ui_form
-from PyQt5.QtCore import pyqtBoundSignal, QCoreApplication, QEvent, QObject, QPointF, QRectF, QSize, Qt
+from PyQt5.QtCore import pyqtBoundSignal, QCoreApplication, QEvent, QObject, QPoint, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import QColor, QCursor, QFont, QIcon, QMouseEvent, QPainter, QPen, QPixmap, QResizeEvent
 from PyQt5.QtWidgets import QAction, QFileDialog, QGraphicsScene, QInputDialog, QMainWindow, QMenu, QMessageBox, \
                             QStatusBar
@@ -596,14 +596,15 @@ class LabelApp(QMainWindow, Ui_form):
         self.right_btn_menu.addAction(modify_index)
         self.right_btn_menu.addAction(switch_pivot_state)
         self.right_btn_menu.addAction(erase_point)
-        self.right_btn_menu.exec(point)
+        self.right_btn_menu.exec(QPoint(int(point.x()), int(point.y())))
 
     def handle_right_btn_menu(self, evt: QMouseEvent):
         if index := self.get_point_index(self.img_view.mapToScene(evt.pos())):
             self.erase_highlight()
             self.highlight_move_index = index
             self.update_all()
-            self.create_right_btn_menu(index, evt.globalPos())
+            global_pos = evt.globalPos()
+            self.create_right_btn_menu(index, QPointF(float(global_pos.x()), float(global_pos.y())))
             self.highlight_move_index = self.get_point_index(
                 self.img_view.mapToScene(self.img_view.mapFromParent(self.mapFromParent(QCursor.pos())))
             )
@@ -612,6 +613,8 @@ class LabelApp(QMainWindow, Ui_form):
     def eventFilter(self, obj: QObject, evt: QEvent):
         if not self.img or obj is not self.img_view.viewport() or evt.type() not in self.target_event_type:
             return super().eventFilter(obj, evt)
+        # noinspection PyTypeChecker
+        evt = QMouseEvent(evt)
         if self.mode == LabelMode.POINT_MODE:
             self.handle_point_mode(evt)
         elif self.mode == LabelMode.LINE_MODE:
